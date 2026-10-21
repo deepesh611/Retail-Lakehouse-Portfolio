@@ -1,4 +1,4 @@
-# Retail Lakehouse Portfolio (Databricks Free Edition)
+# Retail Lakehouse Portfolio
 
 End-to-end retail lakehouse that answers:
 
