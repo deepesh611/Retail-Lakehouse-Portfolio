@@ -23,46 +23,28 @@ jobs:
       - name: Unit tests
         run: pytest -q
 
-      - name: Install Databricks CLI
+      - name: Bundle files present
         run: |
-          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
-          databricks -v
-
-      - name: Bundle validate (syntax)
-        # Validate without workspace auth: uses --force or offline where supported.
-        # If auth is configured via secrets, full validate against workspace runs.
-        env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
-        run: |
-          if [ -n "$DATABRICKS_HOST" ] && [ -n "$DATABRICKS_TOKEN" ]; then
-            databricks bundle validate -t dev
-          else
-            echo "No Databricks secrets — skipping live bundle validate"
-            echo "Locally run: databricks bundle validate -t dev"
-            # Still parse YAML includes exist
-            test -f databricks.yml
-            test -f resources/jobs/ingest_job.yml
-            test -f resources/pipelines/retail_pipeline.yml
-          fi
+          test -f databricks.yml
+          test -f resources/jobs/ingest_job.yml
+          test -f resources/pipelines/retail_pipeline.yml
 
   deploy-dev:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     needs: test-and-validate
     runs-on: ubuntu-latest
-    environment: dev
     steps:
       - uses: actions/checkout@v4
-      - name: Install Databricks CLI
-        run: curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
       - name: Deploy bundle to dev
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
         run: |
           if [ -z "$DATABRICKS_HOST" ] || [ -z "$DATABRICKS_TOKEN" ]; then
-            echo "Skipping deploy — configure DATABRICKS_HOST and DATABRICKS_TOKEN secrets"
+            echo "Skipping deploy — add DATABRICKS_HOST and DATABRICKS_TOKEN repository secrets to enable it"
             exit 0
           fi
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
           databricks bundle validate -t dev
           databricks bundle deploy -t dev
