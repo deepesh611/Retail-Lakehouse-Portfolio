@@ -26,3 +26,7 @@ env:
     value: "a2cd9445-7256-4ff3-874e-3ac0099a06b2"
   - name: RETAIL_ENABLE_SERVING
     value: "false"
+  - name: RETAIL_GENIE_SPACE_ID
+    value: "01f1cd36583b1d4ea63bf88d4f0508d6"
+  - name: RETAIL_WAREHOUSE_ID
+    value: "2e7d08a047a927cf"

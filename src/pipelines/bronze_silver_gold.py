@@ -29,16 +29,18 @@ def raw_path() -> str:
     return _conf("retail.raw_path", "/Volumes/workspace/retail_dev/raw_landing")
 
 
-def read_json_stream(relative: str) -> DataFrame:
+def read_json_stream(relative: str, schema_hints: str | None = None) -> DataFrame:
     path = f"{raw_path().rstrip('/')}/{relative}"
-    return (
+    reader = (
         _spark()
         .readStream.format("cloudFiles")
         .option("cloudFiles.format", "json")
         .option("cloudFiles.inferColumnTypes", "true")
         .option("cloudFiles.schemaLocation", f"{raw_path()}/_schemas/{relative}")
-        .load(path)
     )
+    if schema_hints:
+        reader = reader.option("cloudFiles.schemaHints", schema_hints)
+    return reader.load(path)
 
 
 # ---------------------------------------------------------------------------
@@ -52,7 +54,8 @@ def read_json_stream(relative: str) -> DataFrame:
     table_properties={"quality": "bronze"},
 )
 def bronze_customers():
-    return read_json_stream("customers").withColumn(
+    # change_ts lets a later landing file close the previous SCD2 version.
+    return read_json_stream("customers", "change_ts TIMESTAMP").withColumn(
         "_ingested_at", F.current_timestamp()
     )
 
@@ -103,8 +106,10 @@ def silver_customers():
             F.col("loyalty_tier").cast("string").alias("loyalty_tier"),
             F.col("is_active").cast("boolean").alias("is_active"),
             F.col("_ingested_at"),
+            F.coalesce(F.to_timestamp("change_ts"), F.col("_ingested_at")).alias(
+                "_change_ts"
+            ),
         )
-        .dropDuplicates(["customer_id"])
     )
 
 
@@ -203,7 +208,7 @@ dlt.apply_changes(
     target="gold_customers_scd2",
     source="silver_customers",
     keys=["customer_id"],
-    sequence_by=F.col("_ingested_at"),
+    sequence_by=F.col("_change_ts"),
     apply_as_deletes=None,
     stored_as_scd_type="2",
     track_history_column_list=["email", "full_name", "region", "loyalty_tier", "is_active"],

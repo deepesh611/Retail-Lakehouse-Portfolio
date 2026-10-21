@@ -26,7 +26,7 @@ flowchart LR
   genie --> app
 ```
 
-More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · Free Edition notes: [docs/FREE_EDITION.md](docs/FREE_EDITION.md)
+More detail: [docs/PROJECT_WALKTHROUGH.md](docs/PROJECT_WALKTHROUGH.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · Free Edition notes: [docs/FREE_EDITION.md](docs/FREE_EDITION.md)
 
 ## Repo layout
 

@@ -238,4 +238,5 @@ Thumbs.db
 # Local data dumps
 data/
 tmp/
+scripts/_tmp*
 *.parquet

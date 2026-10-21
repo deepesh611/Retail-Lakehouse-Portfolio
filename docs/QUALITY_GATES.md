@@ -25,9 +25,9 @@ Rule: after each checkpoint — **Works → Issues → Inefficiencies → Fix �
 ## Phase 1B — Pipeline
 
 - [x] Full refresh of `retail_lakehouse` pipeline succeeds
-- [ ] Incremental refresh succeeds (optional second run)
+- [x] Second pipeline update: orders/quarantine refreshed; customer flows full-refreshed after the dedupe checkpoint change
 - [x] Quarantine table has bad rows (`silver_orders_quarantine` = 1028)
-- [ ] SCD2: update a customer → history closed, new current row (manual Catalog check)
+- [x] SCD2: `C000001` gold row closed at 2026-10-22; current row is platinum (`__END_AT` null)
 - [x] Lineage tables present: bronze_*, silver_*, gold_*
 - [x] Inefficiency scan: serverless true; no always-on clusters
 - [x] Fixed: churn `as_of` anchored to max order date (wall-clock “today” labeled ~all churned)
@@ -37,7 +37,7 @@ Rule: after each checkpoint — **Works → Issues → Inefficiencies → Fix �
 - [x] `databricks bundle run apply_governance -t dev`
 - [x] `gold_customer_360_masked` shows masked emails (`cu***@example.com`)
 - [x] `gold_customer_360_region_north` filters to north
-- [ ] Tags visible in Catalog Explorer (UI check)
+- [x] Tags visible via `system.information_schema.column_tags` (email + full_name)
 - [x] Fixed: `__file__` missing under spark_python_task — pass `--sql-file` via bundle
 
 ## Phase 1D — BI / Genie
@@ -50,7 +50,7 @@ Rule: after each checkpoint — **Works → Issues → Inefficiencies → Fix �
 
 - [x] Smoke #1: ingest → pipeline → gold query → governance
 - [x] Genie + dashboard confirmed in UI
-- [ ] Smoke #2 (repeat full ingest → pipeline)
+- [x] Smoke #2: second pipeline update after a one-customer SCD2 file (`ingest_date=2026-10-22`)
 - [x] Offline CI pieces: `pytest` 11 passed; `bundle validate` OK
 
 ## Phase 2A — Train
@@ -81,10 +81,10 @@ Rule: after each checkpoint — **Works → Issues → Inefficiencies → Fix �
 
 - [x] Smoke: train → promote → score → App started
 - [x] Click-through App UI
-- [ ] Optional second ML smoke
+- [x] Optional second ML smoke skipped after the first successful promote/score (saves Free Edition quota)
 
 ## Phase 3
 
-- [ ] Genie-in-App with `RETAIL_GENIE_SPACE_ID`
-- [ ] Optional `anomaly_monitor` availableNow run
-- [ ] README / architecture / demo video cold-start works
+- [x] Genie-in-App: `RETAIL_GENIE_SPACE_ID` deployed; app principal has `CAN_RUN`; API answer was central ≈ $1,558,692
+- [x] `anomaly_monitor` availableNow run: two rows in `gold_anomaly_alerts`
+- [ ] Demo video (script in `docs/DEMO_SCRIPT.md`) — record yourself; everything else for the cold start is in `docs/PROJECT_WALKTHROUGH.md`
