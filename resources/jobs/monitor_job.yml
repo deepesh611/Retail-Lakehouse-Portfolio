@@ -1,0 +1,31 @@
+resources:
+  jobs:
+    anomaly_monitor:
+      name: retail-anomaly-monitor-${bundle.target}
+      max_concurrent_runs: 1
+      tags:
+        project: retail-lakehouse
+        phase: monitor
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${resources.schemas.retail_schema.name}
+        - name: volume_name
+          default: ${var.volume_name}
+      tasks:
+        - task_key: available_now_monitor
+          spark_python_task:
+            python_file: ../../src/monitor/anomaly_monitor.py
+            parameters:
+              - "--catalog"
+              - "{{job.parameters.catalog}}"
+              - "--schema"
+              - "{{job.parameters.schema}}"
+              - "--volume-name"
+              - "{{job.parameters.volume_name}}"
+          environment_key: monitor_env
+      environments:
+        - environment_key: monitor_env
+          spec:
+            environment_version: "3"

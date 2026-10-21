@@ -1,0 +1,8 @@
+resources:
+  apps:
+    churn_control_room:
+      name: retail-churn-control-room-${bundle.target}
+      description: >
+        Control room for retail churn — MLflow insights, batch predictions,
+        pipeline health, and Genie ask-your-data (Phase 3).
+      source_code_path: ../../src/app

@@ -1,0 +1,43 @@
+resources:
+  jobs:
+    synthetic_ingest:
+      name: retail-synthetic-ingest-${bundle.target}
+      max_concurrent_runs: 1
+      tags:
+        project: retail-lakehouse
+        phase: ingest
+        target: ${bundle.target}
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${resources.schemas.retail_schema.name}
+        - name: volume_name
+          default: ${var.volume_name}
+        - name: n_customers
+          default: ${var.n_customers}
+        - name: n_orders
+          default: ${var.n_orders}
+      tasks:
+        - task_key: generate_synthetic
+          spark_python_task:
+            python_file: ../../src/ingest/generate_synthetic.py
+            parameters:
+              - "--catalog"
+              - "{{job.parameters.catalog}}"
+              - "--schema"
+              - "{{job.parameters.schema}}"
+              - "--volume-name"
+              - "{{job.parameters.volume_name}}"
+              - "--n-customers"
+              - "{{job.parameters.n_customers}}"
+              - "--n-orders"
+              - "{{job.parameters.n_orders}}"
+          environment_key: ingest_env
+      environments:
+        - environment_key: ingest_env
+          spec:
+            environment_version: "3"
+            dependencies:
+              - faker==33.1.0
+              - pandas==2.2.3

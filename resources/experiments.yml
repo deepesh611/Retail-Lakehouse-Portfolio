@@ -1,0 +1,4 @@
+resources:
+  experiments:
+    churn_experiment:
+      name: ${var.experiment_name}

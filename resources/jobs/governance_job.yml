@@ -1,0 +1,29 @@
+resources:
+  jobs:
+    apply_governance:
+      name: retail-apply-governance-${bundle.target}
+      max_concurrent_runs: 1
+      tags:
+        project: retail-lakehouse
+        phase: governance
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${resources.schemas.retail_schema.name}
+      tasks:
+        - task_key: apply_governance
+          spark_python_task:
+            python_file: ../../src/pipelines/apply_governance.py
+            parameters:
+              - "--catalog"
+              - "{{job.parameters.catalog}}"
+              - "--schema"
+              - "{{job.parameters.schema}}"
+              - "--sql-file"
+              - "${workspace.file_path}/src/pipelines/governance.sql"
+          environment_key: gov_env
+      environments:
+        - environment_key: gov_env
+          spec:
+            environment_version: "3"

@@ -1,0 +1,28 @@
+command:
+  - "streamlit"
+  - "run"
+  - "streamlit_app.py"
+  - "--server.port"
+  - "8000"
+  - "--server.address"
+  - "0.0.0.0"
+
+env:
+  # In development mode DAB prefixes the schema (e.g. dev_<user>_retail_dev).
+  # Update RETAIL_SCHEMA after first deploy if your prefix differs.
+  - name: RETAIL_CATALOG
+    value: "workspace"
+  - name: RETAIL_SCHEMA
+    value: "dev_deepeshvcd6273_retail_dev"
+  - name: RETAIL_MODEL_NAME
+    value: "workspace.dev_deepeshvcd6273_retail_dev.churn_model"
+  - name: RETAIL_EXPERIMENT_NAME
+    value: "/Shared/[dev deepeshvcd6273] retail-churn-dev"
+  - name: RETAIL_SERVING_ENDPOINT
+    value: "retail-churn-endpoint-dev"
+  - name: RETAIL_PIPELINE_NAME
+    value: "[dev deepeshvcd6273] retail-lakehouse-pipeline-dev"
+  - name: RETAIL_PIPELINE_ID
+    value: "a2cd9445-7256-4ff3-874e-3ac0099a06b2"
+  - name: RETAIL_ENABLE_SERVING
+    value: "false"

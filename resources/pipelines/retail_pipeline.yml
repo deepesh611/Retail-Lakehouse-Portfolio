@@ -1,0 +1,20 @@
+resources:
+  pipelines:
+    retail_lakehouse:
+      name: ${var.pipeline_name}
+      catalog: ${var.catalog}
+      schema: ${resources.schemas.retail_schema.name}
+      serverless: true
+      photon: true
+      channel: CURRENT
+      configuration:
+        retail.catalog: ${var.catalog}
+        retail.schema: ${resources.schemas.retail_schema.name}
+        retail.raw_path: /Volumes/${var.catalog}/${resources.schemas.retail_schema.name}/${var.volume_name}
+        bundle.sourcePath: ${workspace.file_path}/src
+      libraries:
+        - file:
+            path: ../../src/pipelines/bronze_silver_gold.py
+      tags:
+        project: retail-lakehouse
+        phase: lakehouse

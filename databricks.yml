@@ -1,0 +1,96 @@
+# Retail Lakehouse Portfolio — Declarative Automation Bundle
+# Narrative: Which customers will churn next week, and is the pipeline healthy?
+
+bundle:
+  name: retail-lakehouse-portfolio
+  databricks_cli_version: ">=0.218.0"
+
+include:
+  - resources/*.yml
+  - resources/**/*.yml
+
+variables:
+  catalog:
+    description: Unity Catalog name (Free Edition often uses workspace)
+    default: workspace
+  schema:
+    description: Schema for lakehouse tables
+    default: retail_dev
+  volume_name:
+    description: UC Volume for raw landing files
+    default: raw_landing
+  raw_path:
+    description: Absolute Volume path for Auto Loader
+    default: /Volumes/workspace/retail_dev/raw_landing
+  experiment_name:
+    description: MLflow experiment path
+    default: /Shared/retail-churn
+  model_name:
+    description: UC registered model name (catalog.schema.model)
+    default: workspace.retail_dev.churn_model
+  serving_endpoint_name:
+    description: Model serving endpoint name
+    default: retail-churn-endpoint
+  enable_serving:
+    description: Set true when Free Edition allows custom CPU serving
+    default: "false"
+  pipeline_name:
+    description: Lakeflow Declarative Pipeline name
+    default: retail-lakehouse-pipeline
+  n_customers:
+    description: Synthetic customer count (keep small on Free Edition)
+    default: "5000"
+  n_orders:
+    description: Synthetic order count
+    default: "50000"
+
+workspace:
+  file_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+sync:
+  exclude:
+    - .git/**
+    - .github/**
+    - plan/**
+    - "**/.pytest_cache/**"
+    - "**/__pycache__/**"
+    - "**/*.pyc"
+    - .databricks/**
+
+targets:
+  dev:
+    default: true
+    mode: development
+    presets:
+      jobs_max_concurrent_runs: 1
+      trigger_pause_status: PAUSED
+    variables:
+      catalog: workspace
+      schema: retail_dev
+      volume_name: raw_landing
+      raw_path: /Volumes/workspace/retail_dev/raw_landing
+      experiment_name: /Shared/retail-churn-dev
+      model_name: workspace.retail_dev.churn_model
+      serving_endpoint_name: retail-churn-endpoint-dev
+      enable_serving: "false"
+      pipeline_name: retail-lakehouse-pipeline-dev
+      n_customers: "5000"
+      n_orders: "50000"
+
+  prod:
+    mode: production
+    presets:
+      jobs_max_concurrent_runs: 1
+      trigger_pause_status: PAUSED
+    variables:
+      catalog: workspace
+      schema: retail_prod
+      volume_name: raw_landing
+      raw_path: /Volumes/workspace/retail_prod/raw_landing
+      experiment_name: /Shared/retail-churn-prod
+      model_name: workspace.retail_prod.churn_model
+      serving_endpoint_name: retail-churn-endpoint-prod
+      enable_serving: "false"
+      pipeline_name: retail-lakehouse-pipeline-prod
+      n_customers: "10000"
+      n_orders: "100000"

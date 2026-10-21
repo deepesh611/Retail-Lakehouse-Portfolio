@@ -1,0 +1,5 @@
+{
+  "warehouse_id": "2e7d08a047a927cf",
+  "statement": "SELECT customer_id, region, loyalty_tier FROM workspace.dev_deepeshvcd6273_retail_dev.gold_customers_scd2 WHERE customer_id = 'C000001'",
+  "wait_timeout": "50s"
+}

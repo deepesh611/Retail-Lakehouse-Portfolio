@@ -1,0 +1,15 @@
+# Unity Catalog schema + volume for raw landing data
+resources:
+  schemas:
+    retail_schema:
+      name: ${var.schema}
+      catalog_name: ${var.catalog}
+      comment: Retail lakehouse schema (${bundle.target})
+
+  volumes:
+    raw_landing:
+      name: ${var.volume_name}
+      catalog_name: ${var.catalog}
+      schema_name: ${var.schema}
+      volume_type: MANAGED
+      comment: Landing zone for synthetic retail files (customers, orders, clickstream)
