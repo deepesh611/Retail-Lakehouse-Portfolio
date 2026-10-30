@@ -72,6 +72,8 @@ App URL: https://retail-churn-control-room-dev-7474644751098620.aws.databricksap
 
 **App could not see the pipeline.** The App runs as service principal `app-2snpls retail-churn-control-room-dev`, which was not on the pipeline ACL. It now has `CAN_VIEW`. The App also stores the real pipeline id, because the live name is prefixed with `[dev deepeshvcd6273]`.
 
+**App SP lacked Unity Catalog access.** Model registry / predictions / Genie failed with `USE SCHEMA` denied. Grant UC privileges to the SP **applicationId** (`fc782214-…`) — display names with spaces are not resolved. Also grant `CAN_USE` on the SQL warehouse and `CAN_READ` on the MLflow experiment. Bundle `resources/apps/control_room.yml` now binds warehouse, Genie, experiment, and key UC tables so redeploys keep those grants. Re-run helpers: `scripts/grant_app_sp.sql`.
+
 **Empty late-events folder.** Auto Loader raised `CF_EMPTY_DIR_FOR_SCHEMA_INFERENCE`. The monitor now sets the schema itself and, if the folder is empty, writes two demo events before `availableNow`. Resulting alerts: `LATE0001` high amount 2500, `LATE0002` negative amount -15.
 
 **SCD2 updates were dropped.** `dropDuplicates(["customer_id"])` on the silver stream kept the first version forever. That dedupe was removed. A `change_ts` hint orders versions. The first incremental update failed with `STREAMING_STATEFUL_OPERATOR_NOT_MATCH_IN_STATE_METADATA` because the old checkpoint still expected the dedupe operator. A full refresh of `silver_customers`, `gold_customers_scd2`, and `gold_customer_360` cleared that. Afterward `C000001` has two rows: `gold` closed at `2026-10-22T00:00:00Z`, and current `platinum` with `__END_AT` null.

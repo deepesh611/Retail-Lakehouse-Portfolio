@@ -62,15 +62,32 @@ def to_dict(obj: Any) -> Any:
     return str(obj)
 
 
+def _normalize_model_aliases(raw: Any) -> dict[str, str]:
+    """MLflow RegisteredModel.aliases is a dict[str, version]; older SDKs used objects."""
+    if not raw:
+        return {}
+    if isinstance(raw, dict):
+        return {str(k): str(v) for k, v in raw.items()}
+    out: dict[str, str] = {}
+    for item in raw:
+        if isinstance(item, str):
+            out[item] = ""
+            continue
+        alias = getattr(item, "alias", None)
+        version = getattr(item, "version", None)
+        if alias is not None:
+            out[str(alias)] = "" if version is None else str(version)
+    return out
+
+
 def get_model_info(settings: Settings | None = None) -> dict[str, Any]:
     settings = settings or get_settings()
     client = mlflow_client()
     model = client.get_registered_model(settings.model_name)
-    aliases = {a.alias: a.version for a in (model.aliases or [])}
     return {
         "name": model.name,
         "description": model.description,
-        "aliases": aliases,
+        "aliases": _normalize_model_aliases(getattr(model, "aliases", None)),
         "latest_versions": [
             {"version": v.version, "status": v.status, "run_id": v.run_id}
             for v in (model.latest_versions or [])
@@ -215,6 +232,38 @@ def pipeline_health(settings: Settings | None = None) -> dict[str, Any]:
     }
 
 
+def _genie_summary(payload: Any) -> dict[str, Any]:
+    """Extract readable Genie answer text + SQL from SDK response objects."""
+    raw = to_dict(payload)
+    texts: list[str] = []
+    queries: list[str] = []
+    attachments = getattr(payload, "attachments", None) or (
+        raw.get("attachments") if isinstance(raw, dict) else None
+    )
+    for att in attachments or []:
+        att_d = to_dict(att) if not isinstance(att, dict) else att
+        text = att_d.get("text") if isinstance(att_d, dict) else None
+        if isinstance(text, dict) and text.get("content"):
+            texts.append(str(text["content"]))
+        elif hasattr(att, "text") and getattr(att.text, "content", None):
+            texts.append(str(att.text.content))
+        query = att_d.get("query") if isinstance(att_d, dict) else None
+        if isinstance(query, dict) and query.get("query"):
+            queries.append(str(query["query"]))
+        elif hasattr(att, "query") and getattr(att.query, "query", None):
+            queries.append(str(att.query.query))
+    conversation_id = None
+    if isinstance(raw, dict):
+        conversation_id = raw.get("conversation_id")
+    conversation_id = conversation_id or getattr(payload, "conversation_id", None)
+    return {
+        "conversation_id": conversation_id,
+        "answer": "\n\n".join(texts) if texts else None,
+        "sql": queries,
+        "raw": raw,
+    }
+
+
 def genie_ask(question: str, conversation_id: str | None = None) -> dict[str, Any]:
     settings = get_settings()
     if not settings.genie_space_id:
@@ -225,17 +274,24 @@ def genie_ask(question: str, conversation_id: str | None = None) -> dict[str, An
     genie = getattr(w, "genie", None)
     if genie is None:
         raise RuntimeError("Genie SDK surface not available in this workspace/SDK")
-    if conversation_id and hasattr(genie, "create_message_and_wait"):
-        msg = genie.create_message_and_wait(
-            space_id=settings.genie_space_id,
-            conversation_id=conversation_id,
-            content=question,
-        )
-        return {"conversation_id": conversation_id, "message": to_dict(msg)}
-    if hasattr(genie, "start_conversation_and_wait"):
-        conv = genie.start_conversation_and_wait(
-            space_id=settings.genie_space_id,
-            content=question,
-        )
-        return {"result": to_dict(conv)}
+    try:
+        if conversation_id and hasattr(genie, "create_message_and_wait"):
+            msg = genie.create_message_and_wait(
+                space_id=settings.genie_space_id,
+                conversation_id=conversation_id,
+                content=question,
+            )
+            return _genie_summary(msg)
+        if hasattr(genie, "start_conversation_and_wait"):
+            conv = genie.start_conversation_and_wait(
+                space_id=settings.genie_space_id,
+                content=question,
+            )
+            return _genie_summary(conv)
+    except Exception as exc:  # noqa: BLE001
+        raise RuntimeError(
+            "Genie call failed. Confirm the App SP has CAN_RUN on the Genie "
+            "space plus USE CATALOG / USE SCHEMA / SELECT on gold tables, "
+            f"and the signed-in user can access the same data. Details: {exc}"
+        ) from exc
     raise RuntimeError("Genie conversation methods missing")

@@ -6,3 +6,43 @@ resources:
         Control room for retail churn — MLflow insights, batch predictions,
         pipeline health, and Genie ask-your-data (Phase 3).
       source_code_path: ../../src/app
+      # Bind workspace resources so the App SP gets durable privileges on deploy.
+      resources:
+        - name: retail-sql-warehouse
+          sql_warehouse:
+            id: "2e7d08a047a927cf"
+            permission: CAN_USE
+        - name: retail-genie-space
+          genie_space:
+            name: Retail Customer & Sales Analytics
+            space_id: "01f1cd36583b1d4ea63bf88d4f0508d6"
+            permission: CAN_RUN
+        - name: retail-churn-experiment
+          experiment:
+            experiment_id: "4491054589914675"
+            permission: CAN_READ
+        - name: retail-predictions
+          uc_securable:
+            securable_type: TABLE
+            securable_full_name: workspace.${resources.schemas.retail_schema.name}.churn_predictions
+            permission: SELECT
+        - name: retail-customer-360
+          uc_securable:
+            securable_type: TABLE
+            securable_full_name: workspace.${resources.schemas.retail_schema.name}.gold_customer_360
+            permission: SELECT
+        - name: retail-region-kpis
+          uc_securable:
+            securable_type: TABLE
+            securable_full_name: workspace.${resources.schemas.retail_schema.name}.gold_region_kpis
+            permission: SELECT
+        - name: retail-order-facts
+          uc_securable:
+            securable_type: TABLE
+            securable_full_name: workspace.${resources.schemas.retail_schema.name}.gold_order_facts
+            permission: SELECT
+        - name: retail-anomaly-alerts
+          uc_securable:
+            securable_type: TABLE
+            securable_full_name: workspace.${resources.schemas.retail_schema.name}.gold_anomaly_alerts
+            permission: SELECT

@@ -59,8 +59,11 @@ with tabs[1]:
             except Exception as exc:  # noqa: BLE001
                 st.error(str(exc))
 
+SAMPLE_CUSTOMER_IDS = ("C004323", "C004464", "C001757", "C000001")
+
 with tabs[2]:
     st.subheader("Latest batch churn predictions")
+    st.caption(f"Source: `{settings.predictions_table}` (top churn probability).")
     limit = st.slider("Rows", 10, 100, 25)
     if st.button("Load predictions", key="preds"):
         try:
@@ -75,18 +78,28 @@ with tabs[2]:
 
 with tabs[3]:
     st.subheader("Look up batch score for a customer")
-    customer_id = st.text_input("customer_id", value="C000001")
+    st.caption(
+        "Try a high-risk sample: "
+        + ", ".join(f"`{cid}`" for cid in SAMPLE_CUSTOMER_IDS[:3])
+        + " (or any `C000001`–`C005000`)."
+    )
+    customer_id = st.text_input("customer_id", value=SAMPLE_CUSTOMER_IDS[0])
     if st.button("Predict / lookup", key="predict"):
         try:
-            st.json(predict_customer(customer_id, settings))
+            st.json(predict_customer(customer_id.strip(), settings))
+        except LookupError as exc:
+            st.error(
+                f"{exc}. Use a sample id like `{SAMPLE_CUSTOMER_IDS[0]}` "
+                "or load predictions first and copy a customer_id."
+            )
         except Exception as exc:  # noqa: BLE001
             st.error(str(exc))
 
 with tabs[4]:
     st.subheader("Ask your gold data (Genie)")
     starters = [
-        "Which region has the highest lifetime revenue?",
-        "How many customers look churned (churn_label = 1)?",
+        "Which region has the highest revenue?",
+        "How many customers have churn_label = 1?",
         "What is the average order value by loyalty tier?",
     ]
     q = st.selectbox("Starter question", starters)
@@ -96,7 +109,4 @@ with tabs[4]:
         try:
             st.json(genie_ask(question))
         except Exception as exc:  # noqa: BLE001
-            st.warning(
-                "Genie requires RETAIL_GENIE_SPACE_ID (Phase 3). "
-                f"Details: {exc}"
-            )
+            st.error(f"Genie failed: {exc}")
